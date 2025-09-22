@@ -1,0 +1,103 @@
+
+Package slic3r 3.0-dev and move it to our app
+
+1. Install PAR::Packer
+  cpan App::cpanminus
+  cpanm PAR::Packer
+
+2. In slic3r folder
+  A. pp -e -p -x slic3r.pl --xargs cube.stl -o slic3r.par
+  B. mv slic3r.par slic3r.zip
+  C. Extract
+  D. cp slic3r.pl to the new folder. This folder as all the required files for slic3r
+  E. The static libraries for command line slic3r are only Boost.
+  F. find ./ -name '*.bundle'
+     otool -L somefile.bundle
+
+     Rohans-MacBook-Pro:slic3r rohan$ find . -name '*.bundle'
+     ./lib/auto/Class/XSAccessor/XSAccessor.bundle
+     ./lib/auto/Encode/Encode.bundle
+     ./lib/auto/List/Util/Util.bundle
+     ./lib/auto/Slic3r/XS/XS.bundle
+     ./lib/auto/threads/threads.bundle
+     ./lib/auto/Time/HiRes/HiRes.bundle
+     ./lib/auto/Unicode/Normalize/Normalize.bundle
+
+     Rohans-MacBook-Pro:slic3r rohan$ otool -L ./lib/auto/Slic3r/XS/XS.bundle
+     ./lib/auto/Slic3r/XS/XS.bundle:
+	  /usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 307.4.0)
+	  a. /usr/local/opt/boost/lib/libboost_system-mt.dylib (compatibility version 0.0.0, current version 0.0.0)
+	  b. /usr/local/opt/boost/lib/libboost_thread-mt.dylib (compatibility version 0.0.0, current version 0.0.0)
+	  c. /usr/local/opt/boost/lib/libboost_filesystem-mt.dylib (compatibility version 0.0.0, current version 0.0.0)
+	  /System/Library/Frameworks/IOKit.framework/Versions/A/IOKit (compatibility version 1.0.0, current version 275.0.0)
+	  /Sya. stem/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 1348.28.0)
+	  /usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1238.0.0)
+
+3. Dynamic linking with @executable_path
+  A. mkdir bin/RenderStl.app/Contents/Frameworks
+  B. otool -L bin/RenderStl.app/Contents/MacOS/RenderStl
+    bin/RenderStl.app/Contents/MacOS/RenderStl:
+        @rpath/QtQuick.framework/Versions/5/QtQuick (compatibility version 5.7.0, current version 5.7.0)
+        @rpath/QtQml.framework/Versions/5/QtQml (compatibility version 5.7.0, current version 5.7.0)
+        @rpath/QtNetwork.framework/Versions/5/QtNetwork (compatibility version 5.7.0, current version 5.7.0)
+        @rpath/QtCore.framework/Versions/5/QtCore (compatibility version 5.7.0, current version 5.7.0)
+        /System/Library/Frameworks/DiskArbitration.framework/Versions/A/DiskArbitration (compatibility version 1.0.0, current version 1.0.0)
+        /System/Library/Frameworks/IOKit.framework/Versions/A/IOKit (compatibility version 1.0.0, current version 275.0.0)
+        @rpath/QtGui.framework/Versions/5/QtGui (compatibility version 5.7.0, current version 5.7.0)
+        /System/Library/Frameworks/OpenGL.framework/Versions/A/OpenGL (compatibility version 1.0.0, current version 1.0.0)
+        /System/Library/Frameworks/AGL.framework/Versions/A/AGL (compatibility version 1.0.0, current version 1.0.0)
+        /usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 307.4.0)
+
+        /usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1238.0.0)
+
+  C. cp -R ~/Qt/5.7/clang_64/lib/QtQuick.framework RenderStl.app/Contents/Frameworks/
+     cp -R ~/Qt/5.7/clang_64/lib/QtQml.framework RenderStl.app/Contents/Frameworks/
+     cp -R ~/Qt/5.7/clang_64/lib/QtNetwork.framework RenderStl.app/Contents/Frameworks/
+     cp -R ~/Qt/5.7/clang_64/lib/QtCore.framework RenderStl.app/Contents/Frameworks/
+     cp -R ~/Qt/5.7/clang_64/lib/QtGui.framework RenderStl.app/Contents/Frameworks/
+
+  D. install_name_tool -id @executable_path/../Frameworks/QtQuick.framework/Versions/5/QtQuick RenderStl.app/Contents/Frameworks/QtQuick.framework/Versions/5/QtQuick
+
+     install_name_tool -id @executable_path/../Frameworks/QtQml.framework/Versions/5/QtQml RenderStl.app/Contents/Frameworks/QtQml.framework/Versions/5/QtQml
+
+     install_name_tool -id @executable_path/../Frameworks/QtNetwork.framework/Versions/5/QtNetwork RenderStl.app/Contents/Frameworks/QtNetwork.framework/Versions/5/QtNetwork
+
+     install_name_tool -id @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore RenderStl.app/Contents/Frameworks/QtCore.framework/Versions/5/QtCore
+
+     install_name_tool -id @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui RenderStl.app/Contents/Frameworks/QtGui.framework/Versions/5/QtGui
+
+
+  E. install_name_tool -change @rpath/QtQuick.framework/Versions/5/QtQuick @executable_path/../Frameworks/QtQuick.framework/Versions/5/QtQuick RenderStl.app/Contents/MacOS/RenderStl
+
+     install_name_tool -change @rpath/QtQml.framework/Versions/5/QtQml @executable_path/../Frameworks/QtQml.framework/Versions/5/QtQml RenderStl.app/Contents/MacOS/RenderStl
+
+     install_name_tool -change @rpath/QtNetwork.framework/Versions/5/QtNetwork @executable_path/../Frameworks/QtNetwork.framework/Versions/5/QtNetwork RenderStl.app/Contents/MacOS/RenderStl
+
+     install_name_tool -change @rpath/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore RenderStl.app/Contents/MacOS/RenderStl
+
+     install_name_tool -change @rpath/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui RenderStl.app/Contents/MacOS/RenderStl
+
+  F.	RenderStl.app/Contents/MacOS/RenderStl:
+        @executable_path/../Frameworks/QtQuick.framework/Versions/5/QtQuick (compatibility version 5.7.0, current version 5.7.0)
+        @executable_path/../Frameworks/QtQml.framework/Versions/5/QtQml (compatibility version 5.7.0, current version 5.7.0)
+        @executable_path/../Frameworks/QtNetwork.framework/Versions/5/QtNetwork (compatibility version 5.7.0, current version 5.7.0)
+        @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore (compatibility version 5.7.0, current version 5.7.0)
+        /System/Library/Frameworks/DiskArbitration.framework/Versions/A/DiskArbitration (compatibility version 1.0.0, current version 1.0.0)
+        /System/Library/Frameworks/IOKit.framework/Versions/A/IOKit (compatibility version 1.0.0, current version 275.0.0)
+        @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui (compatibility version 5.7.0, current version 5.7.0)
+        /System/Library/Frameworks/OpenGL.framework/Versions/A/OpenGL (compatibility version 1.0.0, current version 1.0.0)
+        /System/Library/Frameworks/AGL.framework/Versions/A/AGL (compatibility version 1.0.0, current version 1.0.0)
+        /usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 307.4.0)
+        /usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1238.0.0)
+
+OR
+        ./macdeployqt ~/projects/Slicing/3dslicing/Qt/RenderStl/bin/RenderStl.app
+	cp -r ~/Qt/5.7/clang_64/qml/* ~/projects/Slicing/3dslicing/Qt/RenderStl/bin/RenderStl.app/Contents/Resources/qml
+
+
+  G. chmod +w  RenderStl.app/Contents/Resources/Ext-backend/slic3r/lib/auto/Slic3r/XS/XS.bundle
+     dylibbundler -od -b -x RenderStl.app/Contents/Resources/Ext-backend/slic3r/lib/auto/Slic3r/XS/XS.bundle -d RenderStl.app/Contents/lib/ -p @executable_path/../../../lib/
+	Found in /usr/local/lib/
+
+
+

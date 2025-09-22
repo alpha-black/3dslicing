@@ -1,0 +1,30 @@
+<RCC>
+    <qresource prefix="/">
+        <file>assets/icons/arrange_white_2x.png</file>
+        <file>assets/icons/folder_open_white_2x.png</file>
+        <file>assets/icons/print_white_2x.png</file>
+        <file>assets/icons/rotate_degrees_white_2x.png</file>
+        <file>assets/icons/save_white_2x.png</file>
+        <file>assets/icons/size_white_2x.png</file>
+        <file>assets/icons/suport_white_2x.png</file>
+        <file>assets/icons/arrange_white.png</file>
+        <file>assets/icons/folder_open_white.png</file>
+        <file>assets/icons/print_white.png</file>
+        <file>assets/icons/rotate_degrees_white.png</file>
+        <file>assets/icons/save_white.png</file>
+        <file>assets/icons/size_white.png</file>
+        <file>assets/icons/suport_white.png</file>
+        <file>assets/icons/arrow_down_white_2x.png</file>
+        <file>assets/icons/arrow_down_white_3x.png</file>
+        <file>assets/icons/arrow_down_white.png</file>
+        <file>assets/icons/arrow_up_white_2x.png</file>
+        <file>assets/icons/arrow_up_white_3x.png</file>
+        <file>assets/icons/arrow_up_white.png</file>
+        <file>assets/icons/close_white_2x.png</file>
+        <file>assets/icons/close_white_3x.png</file>
+        <file>assets/icons/close_white.png</file>
+        <file>main.qml</file>
+        <file>MenuItems.qml</file>
+        <file>RotateMenu.qml</file>
+    </qresource>
+</RCC>

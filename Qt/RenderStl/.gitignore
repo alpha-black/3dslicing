@@ -1,0 +1,20 @@
+#User specific project files
+RenderStl.pro.*
+
+#qmake related
+.qmake.stash
+
+#Ignore Makefiles
+Makefile*
+
+#Ignore Tags
+tags
+
+#OSx specific
+.DS_Store
+
+#YCM for VIM autocompletion
+.ycm_extra_conf.pyc 
+
+#VS Code
+.vscode

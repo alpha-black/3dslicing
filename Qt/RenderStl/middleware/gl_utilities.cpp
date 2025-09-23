@@ -1,18 +1,18 @@
 #include <fstream>
-#include <QDebug>
+#include <cstring>
+
 #include <QMatrix4x4>
+#include <QDebug>
+
+#include <QOpenGLFunctions>
 
 #include "middleware/gl_utilities.h"
 #include "middleware/errors.h"
 #include "middleware/utilities.h"
-#ifdef HAVE_EXT_BACKEND
 #include "middleware/shared_data_handler.h"
-#endif /* HAVE_EXT_BACKEND */
-
-extern SharedDataHandler *dataHandler;
 
 GLuint
-LoadShaders (const char *vertex_file_name, const char *fragment_file_name)
+LoadShaders(QOpenGLContext *context, const char *vertex_file_name, const char *fragment_file_name)
 {
     char fragment_file_path[256];
     char vertex_file_path[256];
@@ -24,8 +24,9 @@ LoadShaders (const char *vertex_file_name, const char *fragment_file_name)
     strcat(fragment_file_path, fragment_file_name);
 
     /* Create the shaders */
-    GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-    GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+    auto openGLFunctions = QOpenGLFunctions(context);
+    GLuint VertexShaderID = openGLFunctions.glCreateShader(GL_VERTEX_SHADER);
+    GLuint FragmentShaderID = openGLFunctions.glCreateShader(GL_FRAGMENT_SHADER);
 
     /* Read the Vertex Shader code from the file */
     std::string VertexShaderCode;
@@ -38,7 +39,6 @@ LoadShaders (const char *vertex_file_name, const char *fragment_file_name)
     } else {
         qDebug() << "Impossible to open " << vertex_file_path
                   << " Are you in the right directory?";
-
         getchar();
         return 0;
     }
@@ -58,55 +58,55 @@ LoadShaders (const char *vertex_file_name, const char *fragment_file_name)
 
     /* Compile Vertex Shader */
     char const * VertexSourcePointer = VertexShaderCode.c_str();
-    glShaderSource(VertexShaderID, 1, &VertexSourcePointer , NULL);
-    glCompileShader(VertexShaderID);
+    openGLFunctions.glShaderSource(VertexShaderID, 1, &VertexSourcePointer , NULL);
+    openGLFunctions.glCompileShader(VertexShaderID);
 
     /* Check Vertex Shader */
-    glGetShaderiv (VertexShaderID, GL_COMPILE_STATUS, &Result);
-    glGetShaderiv (VertexShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+    openGLFunctions.glGetShaderiv (VertexShaderID, GL_COMPILE_STATUS, &Result);
+    openGLFunctions.glGetShaderiv (VertexShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
     if (InfoLogLength > 0 ){
         std::vector<char> VertexShaderErrorMessage (InfoLogLength+1);
-        glGetShaderInfoLog (VertexShaderID, InfoLogLength, NULL,
+        openGLFunctions.glGetShaderInfoLog (VertexShaderID, InfoLogLength, NULL,
             &VertexShaderErrorMessage[0]);
         qDebug() << &VertexShaderErrorMessage[0];
     }
 
     /* Compile Fragment Shader */
     char const * FragmentSourcePointer = FragmentShaderCode.c_str ();
-    glShaderSource (FragmentShaderID, 1, &FragmentSourcePointer , NULL);
-    glCompileShader (FragmentShaderID);
+    openGLFunctions.glShaderSource (FragmentShaderID, 1, &FragmentSourcePointer , NULL);
+    openGLFunctions.glCompileShader (FragmentShaderID);
 
     /* Check Fragment Shader */
-    glGetShaderiv (FragmentShaderID, GL_COMPILE_STATUS, &Result);
-    glGetShaderiv (FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+    openGLFunctions.glGetShaderiv (FragmentShaderID, GL_COMPILE_STATUS, &Result);
+    openGLFunctions.glGetShaderiv (FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
     if (InfoLogLength > 0) {
         std::vector<char> FragmentShaderErrorMessage (InfoLogLength+1);
-        glGetShaderInfoLog (FragmentShaderID, InfoLogLength, NULL,
+        openGLFunctions.glGetShaderInfoLog (FragmentShaderID, InfoLogLength, NULL,
             &FragmentShaderErrorMessage[0]);
         qDebug() << &FragmentShaderErrorMessage[0];
     }
 
     /* Link the program */
-    GLuint ProgramID = glCreateProgram ();
-    glAttachShader (ProgramID, VertexShaderID);
-    glAttachShader (ProgramID, FragmentShaderID);
-    glLinkProgram (ProgramID);
+    GLuint ProgramID = openGLFunctions.glCreateProgram ();
+    openGLFunctions.glAttachShader (ProgramID, VertexShaderID);
+    openGLFunctions.glAttachShader (ProgramID, FragmentShaderID);
+    openGLFunctions.glLinkProgram (ProgramID);
 
     /* Check the program */
-    glGetProgramiv (ProgramID, GL_LINK_STATUS, &Result);
-    glGetProgramiv (ProgramID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+    openGLFunctions.glGetProgramiv (ProgramID, GL_LINK_STATUS, &Result);
+    openGLFunctions.glGetProgramiv (ProgramID, GL_INFO_LOG_LENGTH, &InfoLogLength);
     if (InfoLogLength > 0) {
         std::vector<char> ProgramErrorMessage (InfoLogLength+1);
-        glGetProgramInfoLog (ProgramID, InfoLogLength, NULL,
+        openGLFunctions.glGetProgramInfoLog (ProgramID, InfoLogLength, NULL,
             &ProgramErrorMessage[0]);
         qDebug() << &ProgramErrorMessage[0];
     }
 
-    glDetachShader (ProgramID, VertexShaderID);
-    glDetachShader (ProgramID, FragmentShaderID);
+    openGLFunctions.glDetachShader (ProgramID, VertexShaderID);
+    openGLFunctions.glDetachShader (ProgramID, FragmentShaderID);
 
-    glDeleteShader (VertexShaderID);
-    glDeleteShader (FragmentShaderID);
+    openGLFunctions.glDeleteShader (VertexShaderID);
+    openGLFunctions.glDeleteShader (FragmentShaderID);
 
     return ProgramID;
 }
@@ -476,19 +476,6 @@ rotate_object(QMatrix4x4 *model_cord, int axis_dir, objectRotationAngles *angles
         break;
     }
     *model_cord = translation_matrix * (*model_cord);
-
-    /* For ext-backend */
-#ifdef HAVE_EXT_BACKEND
-    if (dataHandler != NULL) {
-        if (axis_dir == ROTATE_ON_Y_UP || axis_dir == ROTATE_ON_Y_DOWN) {
-            dataHandler->ext_args.rotate_y = angles->rotate_obj_y;
-        }
-        else if (axis_dir == SCALE_UP || axis_dir == SCALE_DOWN) {
-            dataHandler->ext_args.scale = angles->scale;
-        }
-    }
-#endif
-
     return SUCCESS;
 }
 

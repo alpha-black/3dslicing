@@ -9,7 +9,7 @@ class GuiMessage : public QObject
     Q_PROPERTY(QString gui_message READ gui_message WRITE set_gui_message NOTIFY gui_message_changed)
 
 public:
-    GuiMessage() { m_message = "Mehta Heino Industries Oy"; }
+    GuiMessage() { m_message = "3D printing!"; }
  
     void set_gui_message(const QString &msg) {
         if (msg != m_message) {

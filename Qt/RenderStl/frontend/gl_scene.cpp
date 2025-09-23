@@ -4,12 +4,9 @@
 #include "gl_scene.h"
 
 #include <QtQuick/qquickwindow.h>
-#include <QQuickOpenGLUtils>
 #include <QTime>
 #include <QDebug>
 #include <QOpenGLExtraFunctions>
-
-extern SharedDataHandler *dataHandler;
 
 /*****************************************************************
  * OpenGLQuickItem member functions
@@ -158,13 +155,13 @@ OpenGLRender::OpenGLRender()
     setCamPosition();
 
     draw_grid = false;
-    //grid_position.reserve(32);
     bounding_box.reserve(48);
 
     obj_angle.rotate_obj_x = obj_angle.rotate_obj_y = \
     obj_angle.rotate_obj_z = 0.0f;
     obj_angle.scale = 1.0f;
 
+    m_initDone = false;
     initGL();
 }
 
@@ -172,14 +169,15 @@ OpenGLRender::~OpenGLRender()
 {
     /* TODO - delete gl buffers, Vertex Array
      * and program */
-     glDeleteVertexArrays(2, gl.static_vao);
-     glDeleteVertexArrays(4, gl.dynamic_vao);
+     m_functions->glDeleteVertexArrays(2, gl.static_vao);
+     m_functions->glDeleteVertexArrays(4, gl.dynamic_vao);
      glDeleteBuffers(2, gl.static_vertex_buffer);
      glDeleteBuffers(4, gl.dynamic_vertex_buffer);
 
      glDeleteProgram(gl.object_shader_program);
 
-     bounding_box.clear(); bounding_box.shrink_to_fit();
+     bounding_box.clear(); 
+     bounding_box.shrink_to_fit();
 }
 
 void
@@ -188,6 +186,9 @@ OpenGLRender::setWindow(QQuickWindow *window)
     if (!window)
         return;
     m_window = window;
+    if (m_initDone == false) {
+        initGL();
+    }
 
     if (dataHandler) {
         dataHandler->gl_window = m_window;
@@ -261,13 +262,27 @@ OpenGLRender::setCamPosition()
 uint8_t
 OpenGLRender::initGL()
 {
+    if (m_window == nullptr) {
+        return SUCCESS;
+    }
+
+    qDebug() << "Initialize Graphics lib";
     initializeOpenGLFunctions();
+    auto context = m_window->openglContext();
+    if (context == nullptr) {
+        qDebug() << "Error window context is null";
+        return ERROR_NULL_PTR;
+    }
+    m_functions = context->extraFunctions();
+    if (m_functions == nullptr) {
+        qDebug() << "Error extra OpenGL functions is null";
+        return ERROR_NULL_PTR;
+    }
 
     /*******************
       Load the shaders
      *******************/
-    gl.object_shader_program = LoadShaders ("vertex_shader.vs",
-                                            "fragment_shader.fs");
+    gl.object_shader_program = LoadShaders(context, "vertex_shader.vs", "fragment_shader.fs");
     if (gl.object_shader_program == 0) {
         qDebug() << "Error loading object shader.";
         return ERROR_NO_SHADERS;
@@ -281,11 +296,13 @@ OpenGLRender::initGL()
     gl.obj_world_to_view = glGetUniformLocation (gl.object_shader_program,
                                                  "world_to_view");
 
+    
+    m_functions->initializeOpenGLFunctions();
     /**************************************
      Create VAO and buffers for vertex data
      **************************************/
-    glGenVertexArrays(2, gl.static_vao);
-    glGenVertexArrays(4, gl.dynamic_vao);
+    m_functions->glGenVertexArrays(2, gl.static_vao);
+    m_functions->glGenVertexArrays(4, gl.dynamic_vao);
 
     /* Two vertex buffers. Static and dynamic */
     glGenBuffers(2, gl.static_vertex_buffer);
@@ -293,7 +310,8 @@ OpenGLRender::initGL()
 
     /* Static */
     if (get_grid_data(&grid) == SUCCESS) {
-        glBindVertexArray(gl.static_vao[0]);
+
+        m_functions->glBindVertexArray(gl.static_vao[0]);
         glBindBuffer(GL_ARRAY_BUFFER, gl.static_vertex_buffer[0]);
         glEnableVertexAttribArray(ATTRIB_POSITION);
         glVertexAttribPointer(ATTRIB_POSITION, 3, GL_FLOAT, GL_FALSE,
@@ -301,7 +319,7 @@ OpenGLRender::initGL()
         glEnableVertexAttribArray(ATTRIB_NORMAL);
         glVertexAttribPointer(ATTRIB_NORMAL, 3, GL_FLOAT, GL_FALSE,
             sizeof(Vertex), (GLvoid *)offsetof(Vertex, normal));
-        glBindVertexArray(0);
+        m_functions->glBindVertexArray(0);
 
         /* glBindVertexArray(gl.static_vao[1]);
         glBindBuffer(GL_ARRAY_BUFFER, gl.static_vertex_buffer[1]);
@@ -315,7 +333,7 @@ OpenGLRender::initGL()
     }
 
     /* For the object */
-    glBindVertexArray(gl.dynamic_vao[0]);
+    m_functions->glBindVertexArray(gl.dynamic_vao[0]);
     glBindBuffer(GL_ARRAY_BUFFER, gl.dynamic_vertex_buffer[0]);
 
     glEnableVertexAttribArray(ATTRIB_POSITION);
@@ -324,31 +342,31 @@ OpenGLRender::initGL()
     glEnableVertexAttribArray(ATTRIB_NORMAL);
     glVertexAttribPointer(ATTRIB_NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                          (GLvoid *)offsetof(Vertex, normal));
-    glBindVertexArray(0);
+    m_functions->glBindVertexArray(0);
 
     /* For the bounding box */
-    glBindVertexArray(gl.dynamic_vao[1]);
+    m_functions->glBindVertexArray(gl.dynamic_vao[1]);
     glBindBuffer(GL_ARRAY_BUFFER, gl.dynamic_vertex_buffer[1]);
 
     glEnableVertexAttribArray(ATTRIB_POSITION);
     glVertexAttribPointer(ATTRIB_POSITION, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)0);
 
     /* For infill */
-    glBindVertexArray(gl.dynamic_vao[2]);
+    m_functions->glBindVertexArray(gl.dynamic_vao[2]);
     glBindBuffer(GL_ARRAY_BUFFER, gl.dynamic_vertex_buffer[2]);
 
     glEnableVertexAttribArray(ATTRIB_POSITION);
     glVertexAttribPointer(ATTRIB_POSITION, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)0);
-    glBindVertexArray(0);
+    m_functions->glBindVertexArray(0);
 
     /* For debugging */
-    glBindVertexArray(gl.dynamic_vao[3]);
+    m_functions->glBindVertexArray(gl.dynamic_vao[3]);
     glBindBuffer(GL_ARRAY_BUFFER, gl.dynamic_vertex_buffer[3]);
 
     glEnableVertexAttribArray(ATTRIB_POSITION);
     glVertexAttribPointer(ATTRIB_POSITION, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)0);
-    glBindVertexArray(0);
-
+    m_functions->glBindVertexArray(0);
+    m_initDone = true;
     return SUCCESS;
 }
 
@@ -410,19 +428,19 @@ OpenGLRender::renderGL()
 
     if (draw_grid) {
         glUniform1i (gl.select_obj, GL_OBJ_BED);
-        glBindVertexArray(gl.static_vao[0]);
+        m_functions->glBindVertexArray(gl.static_vao[0]);
         glBindBuffer(GL_ARRAY_BUFFER, gl.static_vertex_buffer[0]);
         glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * grid.bed.size(),
                      grid.bed.data(), GL_STATIC_DRAW);
         glDrawArrays(GL_TRIANGLES, 0, grid.bed.size());
-        glBindVertexArray(0);
+        m_functions->glBindVertexArray(0);
     }
 
     if (dataHandler && dataHandler->m_engine &&
         dataHandler->m_engine->slicing_done) {
         glUniform1i (gl.select_obj, GL_OBJ_SLICE);
 
-        glBindVertexArray(gl.dynamic_vao[1]);
+        m_functions->glBindVertexArray(gl.dynamic_vao[1]);
         glBindBuffer(GL_ARRAY_BUFFER, gl.dynamic_vertex_buffer[1]);
         for (auto i = 0u; i < dataHandler->m_engine->get_slicing_plane_count();
             ++i) {
@@ -433,10 +451,10 @@ OpenGLRender::renderGL()
             glDrawArrays(GL_LINES, 0,
                 dataHandler->m_engine->get_number_of_lines_on_plane(i));
         }
-        glBindVertexArray(0);
+        m_functions->glBindVertexArray(0);
 
         glUniform1i (gl.select_obj, GL_OBJ_INFILL);
-        glBindVertexArray(gl.dynamic_vao[2]);
+        m_functions->glBindVertexArray(gl.dynamic_vao[2]);
         glBindBuffer(GL_ARRAY_BUFFER, gl.dynamic_vertex_buffer[2]);
         for (auto i = 0u; i < dataHandler->m_engine->get_infill_count();
             ++i) {
@@ -447,32 +465,31 @@ OpenGLRender::renderGL()
             glDrawArrays(GL_LINES, 0,
                 dataHandler->m_engine->get_loop_infill_count(i));
         }
-        glBindVertexArray(0);
+        m_functions->glBindVertexArray(0);
     } else if (dataHandler && dataHandler->readyToRender) {
         glUniform1i (gl.select_obj, GL_OBJ_DEFAULT);
-        glBindVertexArray(gl.dynamic_vao[0]);
+        m_functions->glBindVertexArray(gl.dynamic_vao[0]);
         glBindBuffer(GL_ARRAY_BUFFER, gl.dynamic_vertex_buffer[0]);
         glBufferData(GL_ARRAY_BUFFER,
                 dataHandler->facets->get_vertices_size() * sizeof(Vertex),
                 dataHandler->facets->get_vertices_addr(), GL_STATIC_DRAW);
         glDrawArrays(GL_TRIANGLES, 0, dataHandler->facets->get_vertices_size());
-        glBindVertexArray(0);
+        m_functions->glBindVertexArray(0);
 
         /* Bounding box. TODO do not fill and clear everytime */
         if (get_bounding_box(&bounding_box) == SUCCESS) {
             glUniform1i (gl.select_obj, GL_OBJ_BBOX);
 
-            glBindVertexArray(gl.dynamic_vao[1]);
+            m_functions->glBindVertexArray(gl.dynamic_vao[1]);
             glBindBuffer(GL_ARRAY_BUFFER, gl.dynamic_vertex_buffer[1]);
             glBufferData(GL_ARRAY_BUFFER, bounding_box.size() * sizeof(v3),
                          bounding_box.data(), GL_STATIC_DRAW);
             glDrawArrays(GL_LINES, 0, bounding_box.size());
-            glBindVertexArray(0);
+            m_functions->glBindVertexArray(0);
             bounding_box.clear(); bounding_box.shrink_to_fit();
         }
     }
     glUseProgram(0);
 
-    // m_window->resetOpenGLState();
-    QQuickOpenGLUtils::resetOpenGLState();
+    m_window->resetOpenGLState();
 }

@@ -44,7 +44,7 @@ GuiGlobal::guiAppInit()
                      m_qml_handler, SLOT(fileOpenedSignalHandler(QString)));
     /* To save a GCode file */
     QObject::connect(m_view->rootObject(), SIGNAL(generateGCodeSignal(QString,int)),
-                     m_qml_handler, SLOT(generateGCodeSignalHandler(QString,int)));
+                     m_qml_handler, SLOT(generateGCodeSignalHandler(QString)));
     QObject::connect(m_view->rootObject(), SIGNAL(generateSupportSignal()),
                      m_qml_handler, SLOT(generateSupportSigHandler()));
     QObject::connect(m_view->rootObject(), SIGNAL(setSupportAndQuality(int, int)),

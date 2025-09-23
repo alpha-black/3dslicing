@@ -22,7 +22,7 @@ slicingPlane::transform_slicing_plane()
     mat4 transformation_mat(dataHandler->obj_matrix.data());
 
     /* Always take the original plane. Not the previously transformed one */
-    y_axis = (transformation_mat.mat_mul_v4(v4(y_axis))).get_vec3();
+    y_axis.set(transformation_mat.mat_mul_v4(v4(y_axis)).get_vec3());
     y_axis.normalize();
     //qDebug() << "Transformed y axis "; print_v3(y_axis);
 }
@@ -44,7 +44,7 @@ slicingPlane::intersect_line (v3 c1, v3 c2)
 
     /* Transform this plane */
     mat4 transformation_mat(dataHandler->obj_matrix.data());
-    p0 = (transformation_mat.mat_mul_v4(v4(p0))).get_vec3();
+    p0.set(transformation_mat.mat_mul_v4(v4(p0)).get_vec3());
 
     //qDebug() << "Point on the slicing plane";
     //print_v3(p0);

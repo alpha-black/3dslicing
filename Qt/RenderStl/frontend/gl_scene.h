@@ -4,6 +4,7 @@
 #include <QQuickItem>
 #include <QOpenGLFunctions>
 #include <QOpenGLShaderProgram>
+#include <QOpenGLContext>
 #include <QTime>
 #include <QDebug>
 
@@ -47,6 +48,9 @@ class OpenGLRender : public QObject, protected QOpenGLFunctions
         /* Pointer to the window. set from QuickItem */
         QQuickWindow *m_window;
 
+        /* Access to openlGL extra functions */
+        QOpenGLExtraFunctions *m_functions;
+
         /* Mouse positions. xPos and yPos store the
          * difference in dist., not the absolute
          * coordinates */
@@ -82,6 +86,9 @@ class OpenGLRender : public QObject, protected QOpenGLFunctions
         bool draw_grid;
 
         std::vector<v3> bounding_box;
+
+        /* Init is done */
+        bool m_initDone;
 };
 
 class OpenGLQuickItem : public QQuickItem

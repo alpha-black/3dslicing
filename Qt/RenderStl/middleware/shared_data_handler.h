@@ -12,12 +12,14 @@
 
 struct SharedDataHandler
 {
-    SharedDataHandler () : facets(NULL), readyToRender(false),
-                           update_obj_orientation(false), m_engine(NULL) {
-        ext_args.scale = 1.0f;
-        ext_args.rotate_y = 0.0f;
+    SharedDataHandler () : 
+        facets(NULL), 
+        readyToRender(false),
+        update_obj_orientation(false), 
+        m_engine(NULL) {}
+    ~SharedDataHandler() { 
+        cleanup(); 
     }
-    ~SharedDataHandler() { cleanup(); }
 
     void cleanup();
 
@@ -46,10 +48,6 @@ struct SharedDataHandler
 
     /* Pointer to the backend engine */
     backend_main *m_engine;
-
-#ifdef HAVE_EXT_BACKEND
-    ext_backend_args ext_args;
-#endif /* HAVE_EXT_BACKEND */
 
     /* GUI messaging */
     GuiMessage *gui_message;

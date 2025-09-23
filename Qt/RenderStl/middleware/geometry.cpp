@@ -5,6 +5,8 @@
 #include <QVector4D>
 #include <QMatrix4x4>
 
+#include <iostream>
+
 void
 FacetList::get_min_xyz (float *x, float *y, float *z)
 {

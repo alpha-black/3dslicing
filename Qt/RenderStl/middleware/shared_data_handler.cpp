@@ -1,5 +1,4 @@
 #include "shared_data_handler.h"
-#include "ext_backend.h"
 #include "slicer.h"
 #include "stl_parser.h"
 #include "errors.h"
@@ -46,16 +45,9 @@ SharedDataHandler::read_file()
 uint8_t
 SharedDataHandler::generateGCode(std::string outFileName)
 {
-    /* Its easier to move all Slic3r related stuff to
-     * a new file and remove the file later.
-     **/
-#ifdef HAVE_EXT_BACKEND
-    ext_args.in_file_name = fileName;
-    ext_args.out_file_name = outFileName;
-    return qt_slic3r_generate_code(&ext_args);
-#else
+    qDebug() << "GCode generation not implemented!";
+    std::cout << outFileName;
     return SUCCESS;
-#endif
 }
 
 uint8_t

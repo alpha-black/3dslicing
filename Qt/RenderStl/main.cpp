@@ -11,20 +11,20 @@ SharedDataHandler *dataHandler;
 int main(int argc, char *argv[])
 {    
     QGuiApplication app(argc, argv);
+    app.setOrganizationName("SomeOrgNameToSupressWarning");
+    app.setOrganizationDomain("SomeOrgDomainToSupressWarning");
     dataHandler = new SharedDataHandler;
 
     GuiGlobal *guiApp = new GuiGlobal;
     guiApp->guiAppInit();
-
+    
     /* Initialize the backend */
     backend_main *p_engine = new backend_main;
     dataHandler->m_engine = p_engine;
 
-    QObject::connect(&app, SIGNAL(aboutToQuit()),
-                     guiApp, SLOT(guiCleanup()));
-
+    QObject::connect(&app, SIGNAL(aboutToQuit()),guiApp, SLOT(guiCleanup()));
     app.exec();
     app.setWindowIcon(QIcon("icons/RenderStl.ico"));
-
-    return 1;
+    
+    return 0;
 }

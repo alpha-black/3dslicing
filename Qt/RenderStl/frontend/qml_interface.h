@@ -15,7 +15,7 @@ public:
 
 public slots:
     void fileOpenedSignalHandler(QString fileName);
-    void generateGCodeSignalHandler(QString outFileName, int printer_id);
+    void generateGCodeSignalHandler(QString outFileName);
     void generateSupportSigHandler();
     void setSupportAndQualitySigH(int support_, int quality_);
 private:

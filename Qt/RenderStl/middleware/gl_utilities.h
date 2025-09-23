@@ -3,9 +3,12 @@
 
 #include <QOpenGLFunctions>
 #include "middleware/geometry.h"
+#include "middleware/shared_data_handler.h"
 
 #define ROTATION_STEP   1.5708f
-#define SCALE_STEP      2.0f//1.1f
+#define SCALE_STEP      2.0f
+
+extern SharedDataHandler *dataHandler;
 
 enum {
     ROTATE_ON_X_UP = 0,
@@ -42,8 +45,8 @@ struct grid_position
 };
 
 
-GLuint LoadShaders (const char *vertex_file_path,
-                    const char *fragment_file_path);
+GLuint 
+LoadShaders(QOpenGLContext *, const char *, const char *);
 
 uint8_t
 get_grid_data(struct grid_position *grid);
